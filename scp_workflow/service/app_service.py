@@ -1,5 +1,5 @@
 # -*-coding:utf8-*-
-from flask import make_response
+from bson import ObjectId
 
 """t_app_class
 """
@@ -24,6 +24,20 @@ def find_all_app_class(t_app_class):
     return app_classes
 
 
+def find_app_class_by_id(t_app_class, app_class_id):
+    app_class = t_app_class.find_one({'_id': ObjectId(app_class_id)})
+    return app_class
+
+
+def get_resource_ids_by_app_class_id(t_app_class, app_class_id):
+    app_class = t_app_class.find_one({'_id': ObjectId(app_class_id)})
+    resource_ids = set()
+    for childShape in app_class['childShapes']:
+        if 'servicetaskclass' in childShape['properties']:
+            resource_ids.add(childShape['properties']['name'])
+    return resource_ids
+
+
 """t_app_instance
 """
 
@@ -31,3 +45,8 @@ def find_all_app_class(t_app_class):
 def insert_app_instance(t_app_instance, app_instance):
     insert_one_result = t_app_instance.insert_one(app_instance)
     return insert_one_result.inserted_id
+
+
+# 课题四接口服务
+def get_resource_instance_id(user_id, app_instance_id, resource_id):
+    return 0
