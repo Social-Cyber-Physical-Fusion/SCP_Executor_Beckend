@@ -34,6 +34,7 @@ def get_resource_ids_by_app_class_id(t_app_class, app_class_id, type):
     resource_ids = set()
     for childShape in app_class['childShapes']:
         if type in childShape['properties']:
+            # todo 会有多个资源,要分开获取
             resource_ids.add(childShape['properties'][type])
     resource_ids.add("咖啡机1")
     return resource_ids

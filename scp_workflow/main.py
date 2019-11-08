@@ -69,13 +69,17 @@ def save_app_instance():
     input_resource_ids = get_resource_ids_by_app_class_id(t_app_class, app_class_id, "input")
     # 获取输出资源
     output_resource_ids = get_resource_ids_by_app_class_id(t_app_class, app_class_id, "output")
-    # 执行资源实例化
-    for resource_id in executor_resource_ids:
+    # 所有需要的资源,可能需要应用初始时实例化,也有可能是在应用执行过程中产生绑定实例
+    all_need_resource_ids = executor_resource_ids.union(input_resource_ids)
+    # 初始资源实例化
+    for resource_id in all_need_resource_ids:
         if resource_id not in output_resource_ids:
+            # 对于执行才产生的实例暂时先不绑定
             continue
         else:
+            # 对于非执行产生的实例,在初始时进行实例化绑定
             resource_instance_id = get_resource_instance_id(user_id, str(app_instance_id), resource_id)
-            insert_app_instance_resource(t_app_instance,app_instance_id, resource_id, resource_instance_id)
+            insert_app_instance_resource(t_app_instance, app_instance_id, resource_id, resource_instance_id)
     # 输入资源实例化
     for resource_id in input_resource_ids:
         if resource_id not in output_resource_ids:
