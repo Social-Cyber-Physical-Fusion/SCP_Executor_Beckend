@@ -1,5 +1,9 @@
 .vscode/settings.json
+<<<<<<< HEAD
 scp_workflow/prefect_test/*
 utility/__pycache__/__init__.cpython-37.pyc
 utility/__pycache__/my_logger.cpython-37.pyc
 utility/__pycache__/MyLogger.cpython-37.pyc
+=======
+.idea/*
+>>>>>>> 2348a22137af0e295e52d7cba82edc2f903770c9
