@@ -29,7 +29,26 @@ def find_app_class_by_id(t_app_class, app_class_id):
     return app_class
 
 
-def get_resource_ids_by_app_class_id(t_app_class, app_class_id):
+def get_resource_ids_by_app_class_id(t_app_class, app_class_id, type):
+    app_class = t_app_class.find_one({'_id': ObjectId(app_class_id)})
+    resource_ids = set()
+    for childShape in app_class['childShapes']:
+        if type in childShape['properties']:
+            resource_ids.add(childShape['properties'][type])
+    resource_ids.add("咖啡机1")
+    return resource_ids
+
+
+def gete_input_resource_ids_by_app_class_id(t_app_class, app_class_id):
+    app_class = t_app_class.find_one({'_id': ObjectId(app_class_id)})
+    resource_ids = set()
+    for childShape in app_class['childShapes']:
+        if 'servicetaskclass' in childShape['properties']:
+            resource_ids.add(childShape['properties']['name'])
+    return resource_ids
+
+
+def get_output_resource_ids_by_app_class_id(t_app_class, app_class_id):
     app_class = t_app_class.find_one({'_id': ObjectId(app_class_id)})
     resource_ids = set()
     for childShape in app_class['childShapes']:
@@ -50,3 +69,9 @@ def insert_app_instance(t_app_instance, app_instance):
 # 课题四接口服务
 def get_resource_instance_id(user_id, app_instance_id, resource_id):
     return 0
+
+
+def insert_app_instance_resource(t_app_instance, app_instance_id, resource_id, resource_instance_id):
+    myquery = {"_id": app_instance_id}
+    newvalues = {"$set": {"resource." + resource_id: resource_instance_id}}
+    t_app_instance.update_one(myquery, newvalues)

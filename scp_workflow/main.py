@@ -1,5 +1,6 @@
 # -*-coding:utf8-*-
 import json
+import time
 import pymongo
 from bson.json_util import loads, dumps
 from flask import Flask, request, jsonify
@@ -58,17 +59,31 @@ def get_all_app_class():
 def save_app_instance():
     app_class_id = request.values.get("app_class_id")
     user_id = request.values.get("user_id")
-    app_instance = {"app_class_id": ObjectId(app_class_id), "user_id": user_id}
+    create_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    app_instance = {"app_class_id": ObjectId(app_class_id), "user_id": user_id, "create_time": create_time}
     # 创建应用实例
     app_instance_id = insert_app_instance(t_app_instance, app_instance)
-    # 获取资源类
-    resource_ids = get_resource_ids_by_app_class_id(t_app_class, app_class_id)
-    # 人资源实例化
-
-    # 物理资源实例化
-    for resource_id in resource_ids:
-        resource_instance_id = get_resource_instance_id(user_id, str(app_instance_id), resource_id)
-    # 信息资源实例化
+    # 获取执行资源
+    executor_resource_ids = get_resource_ids_by_app_class_id(t_app_class, app_class_id, "executor")
+    # 获取输入资源
+    input_resource_ids = get_resource_ids_by_app_class_id(t_app_class, app_class_id, "input")
+    # 获取输出资源
+    output_resource_ids = get_resource_ids_by_app_class_id(t_app_class, app_class_id, "output")
+    # 执行资源实例化
+    for resource_id in executor_resource_ids:
+        if resource_id not in output_resource_ids:
+            continue
+        else:
+            resource_instance_id = get_resource_instance_id(user_id, str(app_instance_id), resource_id)
+            insert_app_instance_resource(t_app_instance,app_instance_id, resource_id, resource_instance_id)
+    # 输入资源实例化
+    for resource_id in input_resource_ids:
+        if resource_id not in output_resource_ids:
+            continue
+        else:
+            resource_instance_id = get_resource_instance_id(user_id, str(app_instance_id), resource_id)
+            insert_app_instance_resource(t_app_instance, app_instance_id, resource_id, resource_instance_id)
+    # 调用执行引擎
 
     return app_instance_id
 
