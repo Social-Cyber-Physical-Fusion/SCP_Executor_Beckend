@@ -18,7 +18,9 @@ logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
                     filename='log.log',
                     level=logging.INFO)
 
+
 class MyLogger():
 
-    def get_MyLogger(self):
+    @classmethod
+    def get_logger(self):
         return logging.getLogger()

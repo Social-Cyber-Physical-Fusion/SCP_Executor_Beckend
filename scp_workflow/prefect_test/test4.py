@@ -23,3 +23,6 @@ with Flow('Hello', schedule) as flow:
     say_hello()
 
 flow.run()
+
+if __name__ == "__main__":
+    pass

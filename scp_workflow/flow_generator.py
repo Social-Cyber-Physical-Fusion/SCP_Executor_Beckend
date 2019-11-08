@@ -9,32 +9,24 @@
 '''
 
 # here put the import lib
+import os
+import sys
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, parentdir)
+
+from utility.my_logger import MyLogger
 from string import Template
 
-BASE_PACKAGE = '''from prefect import Task'''
+logger = MyLogger.get_logger()
 
-BASE_TEMPLATE = '''
-
-class scp_task_$task_id(Task):
-
-    def __init__(self, default: int, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.default = default
-
-    def run(self, x: int, y: int=None) -> int:
-        if y is None:
-            y = self.default
-        return x + y
-
-flow = Flow('$flow_name')
-
-flow.run()
-'''
+FLOW_ADD_TASK = '''flow.add($task_identifier)'''
+FLOW_CONFIG = '''flow = Flow('$flow_name')'''
+FLOW_START = '''flow.run()'''
 
 class Flow_Template():
-
     def __init__(self):
         pass
+
 
 if __name__ == "__main__":
     template_string = 'scp_task_$task_id():'
@@ -42,3 +34,5 @@ if __name__ == "__main__":
     d = {'task_id': '1'}
     print(s.substitute(d))
 
+    # logger = MyLogger.get_logger()
+    logger.info(s.substitute(d))
