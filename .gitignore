@@ -1,6 +1,9 @@
 .vscode/settings.json
-scp_workflow/prefect_test/*
+scp_workflow/prefect_test/
 utility/__pycache__/__init__.cpython-37.pyc
 utility/__pycache__/my_logger.cpython-37.pyc
 utility/__pycache__/MyLogger.cpython-37.pyc
 .idea/*
+log.log
+__pycache__/*
+./*/__pycache__/*
