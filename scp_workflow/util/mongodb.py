@@ -8,3 +8,5 @@ def get_id_str(apps):
         for app in apps:
             app["_id"] = str(app["_id"])
     return apps
+
+

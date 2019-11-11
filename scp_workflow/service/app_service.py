@@ -35,8 +35,11 @@ def get_resource_ids_by_app_class_id(t_app_class, app_class_id, type):
     for childShape in app_class['childShapes']:
         if type in childShape['properties']:
             # todo 会有多个资源,要分开获取
-            resource_ids.add(childShape['properties'][type])
-    resource_ids.add("咖啡机1")
+            result = childShape['properties'][type]
+            if type == "activityelement":
+                resource_ids.add((result['type'], result['id']))
+            else:
+                resource_ids.add(('云应用', 'sid-45939CC7-EAED-404F-8DCD-6409A512403E'))
     return resource_ids
 
 
@@ -76,3 +79,67 @@ def insert_app_instance_resource(t_app_instance, app_instance_id, resource_id, r
     myquery = {"_id": app_instance_id}
     newvalues = {"$set": {"resource." + resource_id: resource_instance_id}}
     t_app_instance.update_one(myquery, newvalues)
+
+
+def find_all_app_instance_introduction(t_app_instance):
+    app_instance_introduction = []
+    result = t_app_instance.aggregate([
+        {
+            "$lookup": {
+                "from": "t_app_class",
+                "localField": "app_class_id",
+                "foreignField": "_id",
+                "as": "app_class"
+            }
+        },
+        {
+            "$unwind": "$app_class"
+        },
+        {
+            "$project": {
+                "_id": 1,
+                "user_id": 1,
+                "create_time": 1,
+                "app_class.properties.name": 1
+            }
+        }
+    ])
+    for app_instance in result:
+        app_instance_introduction.append(app_instance)
+    return app_instance_introduction
+
+
+def find_app_class_by_instance_id(t_app_instance, app_instance_id):
+    app_class = []
+    result = t_app_instance.aggregate([
+        {
+            "$lookup": {
+                "from": "t_app_class",
+                "localField": "app_class_id",
+                "foreignField": "_id",
+                "as": "app_class"
+            }
+        },
+        {
+            "$unwind": "$app_class"
+        },
+        {
+            "$project": {
+                "_id": 1,
+                "app_class.childShapes": 1
+            }
+        },
+        {
+            "$match": {
+                "_id": ObjectId(app_instance_id)
+            }
+        }
+    ])
+    for app_instance in result:
+        app_class.append(app_instance)
+    return app_class[0]
+
+
+def find_app_instance_action_state_by_instance_id(t_app_instance, app_instance_id):
+    app_instance_action_state = t_app_instance.find_one({'_id': ObjectId(app_instance_id)}, {"action_state": 1})
+    return app_instance_action_state

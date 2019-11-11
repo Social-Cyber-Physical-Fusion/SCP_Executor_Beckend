@@ -20,7 +20,8 @@ t_app_instance = db_hcp["t_app_instance"]
 # 保存app_class
 @app.route('/save_app_class', methods={'POST', 'GET'})
 def save_app_class():
-    app_class = json.loads(request.data)
+    data = request.data.replace(b"$$", b"")
+    app_class = json.loads(data)
     app_class_id = insert_app_class(t_app_class, app_class)
     data = {'app_class_id': str(app_class_id)}
     return jsonify(data)
@@ -64,7 +65,7 @@ def save_app_instance():
     # 创建应用实例
     app_instance_id = insert_app_instance(t_app_instance, app_instance)
     # 获取执行资源
-    executor_resource_ids = get_resource_ids_by_app_class_id(t_app_class, app_class_id, "executor")
+    executor_resource_ids = get_resource_ids_by_app_class_id(t_app_class, app_class_id, "activityelement")
     # 获取输入资源
     input_resource_ids = get_resource_ids_by_app_class_id(t_app_class, app_class_id, "input")
     # 获取输出资源
@@ -73,23 +74,16 @@ def save_app_instance():
     all_need_resource_ids = executor_resource_ids.union(input_resource_ids)
     # 初始资源实例化
     for resource_id in all_need_resource_ids:
-        if resource_id not in output_resource_ids:
+        if resource_id in output_resource_ids:
             # 对于执行才产生的实例暂时先不绑定
             continue
         else:
             # 对于非执行产生的实例,在初始时进行实例化绑定
             resource_instance_id = get_resource_instance_id(user_id, str(app_instance_id), resource_id)
-            insert_app_instance_resource(t_app_instance, app_instance_id, resource_id, resource_instance_id)
-    # 输入资源实例化
-    for resource_id in input_resource_ids:
-        if resource_id not in output_resource_ids:
-            continue
-        else:
-            resource_instance_id = get_resource_instance_id(user_id, str(app_instance_id), resource_id)
-            insert_app_instance_resource(t_app_instance, app_instance_id, resource_id, resource_instance_id)
+            insert_app_instance_resource(t_app_instance, app_instance_id, resource_id[1], resource_instance_id)
     # 调用执行引擎
 
-    return app_instance_id
+    return str(app_instance_id)
 
 
 # 删除app_instance
@@ -97,8 +91,31 @@ def save_app_instance():
 # 修改app_instance
 
 # 查询app_instance
+@app.route('/get_all_app_instance_introduction', methods={'POST', 'GET'})
+def get_all_app_instance_introduction():
+    app_instance_introduction = find_all_app_instance_introduction(t_app_instance)
+    app_instance_introduction = get_id_str(app_instance_introduction)
+    data = {'app_classes_introduction': app_instance_introduction}
+    return jsonify(data)
+
+
+@app.route('/get_app_class_by_instance_id', methods={'POST', 'GET'})
+def get_app_class_by_instance_id():
+    app_instance_id = request.values.get("app_instance_id")
+    app_class = find_app_class_by_instance_id(t_app_instance, app_instance_id)
+    app_class = get_id_str(app_class)
+    data = {'app_class': app_class}
+    return jsonify(data)
+
+
+@app.route('/get_app_instance_action_state_by_instance_id', methods={'POST', 'GET'})
+def get_app_instance_action_state_by_instance_id():
+    app_instance_id = request.values.get("app_instance_id")
+    app_instance_action_state = find_app_instance_action_state_by_instance_id(t_app_instance, app_instance_id)
+    app_instance_action_state = get_id_str(app_instance_action_state)
+    data = {'app_instance_action_state': app_instance_action_state}
+    return jsonify(data)
 
 
 if __name__ == '__main__':
-    
     app.run(host='0.0.0.0', port='5001')
