@@ -7,3 +7,9 @@ utility/__pycache__/MyLogger.cpython-37.pyc
 log.log
 __pycache__/*
 ./*/__pycache__/*
+prefect_test/workflow_test.py
+prefect_test/dict_test.py
+prefect_test/docker_pipeline_imperatvice_api.py
+.vscode/launch.json
+scp_modelparser/__pycache__/__init__.cpython-38.pyc
+scp_workflow/prefect_test/test4.py
