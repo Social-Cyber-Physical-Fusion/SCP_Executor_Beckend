@@ -81,6 +81,12 @@ def insert_app_instance_resource(t_app_instance, app_instance_id, resource_id, r
     t_app_instance.update_one(myquery, newvalues)
 
 
+def update_app_instance_action_state(t_app_instance, app_instance_id, action_id, action_state):
+    myquery = {"_id": ObjectId(app_instance_id)}
+    newvalues = {"$set": {"action_state." + action_id: action_state}}
+    t_app_instance.update_one(myquery, newvalues)
+
+
 def find_all_app_instance_introduction(t_app_instance):
     app_instance_introduction = []
     result = t_app_instance.aggregate([
@@ -126,7 +132,8 @@ def find_app_class_by_instance_id(t_app_instance, app_instance_id):
         {
             "$project": {
                 "_id": 1,
-                "app_class.childShapes": 1
+                "app_class.childShapes": 1,
+                "app_class.properties.name": 1
             }
         },
         {
@@ -143,3 +150,22 @@ def find_app_class_by_instance_id(t_app_instance, app_instance_id):
 def find_app_instance_action_state_by_instance_id(t_app_instance, app_instance_id):
     app_instance_action_state = t_app_instance.find_one({'_id': ObjectId(app_instance_id)}, {"action_state": 1})
     return app_instance_action_state
+
+
+def find_app_instance_resource_by_instance_id(t_app_instance, app_instance_id):
+    app_instance_resource = t_app_instance.find_one({'_id': ObjectId(app_instance_id)}, {"resource": 1})
+    return app_instance_resource
+
+# app_show
+def find_app_show(t_app_show, user_id):
+    app_show_instance_id = t_app_show.find_one({'user_id': user_id})
+    return app_show_instance_id
+
+
+def update_t_app_show_instance_id(t_app_show, user_id, instance_id):
+    myquery = {"user_id": user_id}
+    newvalues = {"$set": {"instance_id": instance_id}}
+    t_app_show.update_one(myquery, newvalues)
+    return
+
+

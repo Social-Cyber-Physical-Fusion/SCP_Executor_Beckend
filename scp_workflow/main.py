@@ -7,7 +7,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from scp_workflow.service.app_service import *
 from scp_workflow.util.mongodb import *
-from coffee_flow import Coffee_Flow
+from scp_workflow.service.coffee_flow import CommonFlow
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -16,6 +16,7 @@ myclient = pymongo.MongoClient("mongodb://129.211.10.118:27017/")
 db_hcp = myclient["db_hcp"]
 t_app_class = db_hcp["t_app_class"]
 t_app_instance = db_hcp["t_app_instance"]
+t_app_show = db_hcp["t_app_show"]
 
 
 # 保存app_class
@@ -62,7 +63,8 @@ def save_app_instance():
     app_class_id = request.values.get("app_class_id")
     user_id = request.values.get("user_id")
     create_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-    app_instance = {"app_class_id": ObjectId(app_class_id), "user_id": user_id, "create_time": create_time}
+    app_instance = {"app_class_id": ObjectId(app_class_id), "user_id": user_id, "create_time": create_time,
+                    "action_state": {}}
     # 创建应用实例
     app_instance_id = insert_app_instance(t_app_instance, app_instance)
     # 获取执行资源
@@ -83,11 +85,27 @@ def save_app_instance():
             resource_instance_id = get_resource_instance_id(user_id, str(app_instance_id), resource_id)
             insert_app_instance_resource(t_app_instance, app_instance_id, resource_id[1], resource_instance_id)
 
-
     # 调用执行引擎
-    cf = Coffee_Flow()
-    cf.run_predefined_flow()
+    mongodb = {
+        't_app_class': t_app_class,
+        't_app_instance': t_app_instance,
+    }
+    cf = CommonFlow(app_instance_id, **mongodb)
+    cf.run_flow()
+    return str(app_instance_id)
 
+
+# 测试
+@app.route('/test_save_app_instance', methods={'POST', 'GET'})
+def test_save_app_instance():
+    app_instance_id = "5dca774eefb59bfd7f4ad03e"
+    # 调用执行引擎
+    mongodb = {
+        't_app_class': t_app_class,
+        't_app_instance': t_app_instance,
+    }
+    cf = CommonFlow(app_instance_id, **mongodb)
+    cf.run_flow()
     return str(app_instance_id)
 
 
@@ -107,6 +125,8 @@ def get_all_app_instance_introduction():
 @app.route('/get_app_class_by_instance_id', methods={'POST', 'GET'})
 def get_app_class_by_instance_id():
     app_instance_id = request.values.get("app_instance_id")
+    if app_instance_id == "":
+        return "null"
     app_class = find_app_class_by_instance_id(t_app_instance, app_instance_id)
     app_class = get_id_str(app_class)
     data = {'app_class': app_class}
@@ -120,6 +140,61 @@ def get_app_instance_action_state_by_instance_id():
     app_instance_action_state = get_id_str(app_instance_action_state)
     data = {'app_instance_action_state': app_instance_action_state}
     return jsonify(data)
+
+
+@app.route('/get_app_instance_action_state_and_resource_by_instance_id', methods={'POST', 'GET'})
+def get_app_instance_action_state_and_resource_by_instance_id():
+    app_instance_id = request.values.get("app_instance_id")
+    # 获取action和对应state
+    app_instance_action_state = find_app_instance_action_state_by_instance_id(t_app_instance, app_instance_id)
+    # app_instance_action_state = get_id_str(app_instance_action_state)
+    # data = {'app_instance_action_state': app_instance_action_state}
+    # 获取action 和对应执行者资源id
+    app_class = find_app_class_by_instance_id(t_app_instance, app_instance_id)
+    # 获取执行者资源id和对应资源实例id
+    app_instance_resource = find_app_instance_resource_by_instance_id(t_app_instance, app_instance_id)
+    # 找到所有有执行者的action，拼接action_id ,state,resource_id,resource_instance_id
+    data = []
+    for child_shape in app_class.get("app_class").get("childShapes"):
+        activityelement = child_shape.get("properties").get("activityelement")
+        if activityelement is not None:
+            action_id = child_shape.get("resourceId")
+            resource_id = activityelement.get("id")
+            state = app_instance_action_state.get("action_state").get(action_id)
+            if state is None:
+                state = ""
+            resource_instance_id = app_instance_resource.get("resource").get(resource_id)
+            if resource_instance_id is None:
+                state = ""
+            data.append({
+                "action_id": action_id,
+                "state": state,
+                "resource_id": resource_id,
+                "resource_instance_id": resource_instance_id,
+            })
+    return jsonify(data)
+
+
+"""
+t_app_show
+"""
+
+
+@app.route('/get_app_show', methods={'POST', 'GET'})
+def get_app_show():
+    user_id = request.values.get("user_id")
+    app_show = find_app_show(t_app_show, user_id)
+    app_show = get_id_str(app_show)
+    data = {'app_show': app_show}
+    return jsonify(data)
+
+
+@app.route('/update_app_show_instance_id', methods={'POST', 'GET'})
+def update_app_show_instance_id():
+    user_id = request.values.get("user_id")
+    instance_id = request.values.get("instance_id")
+    update_t_app_show_instance_id(t_app_show, user_id, instance_id)
+    return "success"
 
 
 if __name__ == '__main__':
